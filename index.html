@@ -960,21 +960,45 @@ function vContrat() {
 function renderSheet() {
   const el = $('#sheet'); el.hidden = !U.sheet; if (!U.sheet) { el.innerHTML = ''; return; }
   const list = dossiers.length ? dossiers : [{ id: S.id, name: dossierName(S), updatedAt: S.updatedAt, logements: S.projet.logements, total: compute(S).total }];
-  el.innerHTML = `<div class="pan" role="dialog" aria-label="Dossiers"><div class="grab"></div>
+  patch(el, `<div class="pan" role="dialog" aria-label="Dossiers"><div class="grab"></div>
    <div class="row" style="justify-content:space-between"><h1 class="ttl" style="margin:6px 0 2px;font-size:24px">Dossiers</h1><button class="ibtn" data-a="sheetClose" aria-label="Fermer">${ic('x')}</button></div>
    <p class="lead" style="margin-bottom:8px">${DB && !cloudErr ? 'Partagés avec les personnes qui ont accès à cette page.' : 'Enregistrés sur cet appareil.'}</p>
    <div class="acts"><button data-a="new">${ic('plus')}Nouveau</button><button data-a="dup">${ic('copy')}Dupliquer</button><button data-a="expJson">${ic('download')}Exporter</button><button data-a="impJson">${ic('upload')}Importer</button></div>
    <ul class="dl">${list.map(d => `<li class="${d.id === S.id ? 'cur' : ''}"><span class="bubble sm">${ic('building-2')}</span><button class="o" data-a="openD" data-id="${d.id}"><span class="nm">${esc(d.name)}</span><small>${d.logements || 0} logements, ${chf(d.total || 0)}, ${new Date(d.updatedAt).toLocaleDateString('fr-CH')}</small></button>${d.id !== S.id ? `<button class="del ${U.delArm === d.id ? 'arm' : ''}" data-a="delD" data-id="${d.id}">${U.delArm === d.id ? 'Supprimer' : ic('trash-2', 'sm')}</button>` : ''}</li>`).join('')}</ul>
    <h3 style="font-size:16px">Couleurs</h3><div class="cols"><label><input type="color" data-b="theme.p" data-rr="c" value="${S.theme.p}">Principale</label><label><input type="color" data-b="theme.a" data-rr="c" value="${S.theme.a}">Accent</label><button class="btn sm" data-a="themeReset">Help-immo</button></div>
-   <input type="file" id="impFile" accept="application/json,.json" hidden></div>`;
+   <input type="file" id="impFile" accept="application/json,.json" hidden></div>`);
+}
+
+
+/* Mise à jour ciblée du DOM : seuls les nœuds qui changent sont touchés (aucun clignotement) */
+function morph(a, b) {
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) { a.replaceWith(b); return; }
+  if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  if (a.nodeType !== 1) return;
+  for (const at of [...a.attributes]) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of [...b.attributes]) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+  const tag = a.tagName;
+  if (tag === 'TEXTAREA') { if (a !== document.activeElement && a.value !== b.textContent) a.value = b.textContent; return; }
+  if (tag === 'INPUT') { const v = b.getAttribute('value') ?? ''; if (a !== document.activeElement && a.value !== v) a.value = v; return; }
+  const ac = [...a.childNodes], bc = [...b.childNodes];
+  bc.forEach((n, i) => i < ac.length ? morph(ac[i], n) : a.appendChild(n));
+  for (let i = bc.length; i < ac.length; i++) ac[i].remove();
+  if (tag === 'SELECT' && a !== document.activeElement) { const o = b.querySelector('option[selected]'); if (o && a.value !== o.value) a.value = o.value; }
+}
+function patch(el, html) {
+  if (!el.firstElementChild) { el.innerHTML = html; return; }
+  const t = document.createElement('div'); t.innerHTML = html;
+  const cur = [...el.childNodes], nxt = [...t.childNodes];
+  nxt.forEach((n, i) => i < cur.length ? morph(cur[i], n) : el.appendChild(n));
+  for (let i = nxt.length; i < cur.length; i++) cur[i].remove();
 }
 
 /* --- Rendu général --- */
+const VERSION = '1.2';
 const VIEWS = { projet: vProjet, amu: vAmu, cadrage: vCadrage, prest: vPrest, planning: vPlanning, contrat: vContrat };
-function render(keepScroll = true) {
-  const y = window.scrollY;
-  $('#view').innerHTML = `<div class="${U.shown === U.tab ? '' : 'view'}">${VIEWS[U.tab]()}</div>`; U.shown = U.tab;
-  if (keepScroll) window.scrollTo(0, y);
+function render() {
+  if (U.shown === U.tab) patch($('#view'), `<div>${VIEWS[U.tab]()}</div>`);
+  else { $('#view').innerHTML = `<div class="view">${VIEWS[U.tab]()}</div>`; U.shown = U.tab; }
   $$('#nav button').forEach(b => { const on = b.dataset.t === U.tab; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   live();
 }
@@ -982,11 +1006,11 @@ function live() {
   const c = compute(S);
   $('#dossierBtn .nm').textContent = dossierName(S);
   const pill = $('#pill'); pill.classList.toggle('hide', U.tab === 'contrat' || U.tab === 'amu');
-  pill.innerHTML = `<span class="h">${fh(c.amuH)}</span><span class="c">${chf(c.total)}</span><span class="go">${ic('chevron-right')}</span>`;
-  $('#aside').innerHTML = `${U.tab === 'projet' ? '' : `<div class="fac">${facadeSVG(facadeModel(S))}</div>`}<div class="lbl">Total HT</div><div class="amt">${chf(c.total)}</div><div class="lbl">${fh(c.amuH)} d’accompagnement</div>
-   <div style="margin-top:18px"><button class="btn p" data-a="pdfContrat">${ic('file-signature', 'sm')}Contrat à signer</button><button class="btn" data-a="pptx">${ic('presentation', 'sm')}PowerPoint</button><button class="btn" data-a="pdfSlides">${ic('file-down', 'sm')}Présentation PDF</button><button class="btn" data-a="present" data-n="0">${ic('monitor-play', 'sm')}Présenter</button></div>`;
+  patch(pill, `<span class="h">${fh(c.amuH)}</span><span class="c">${chf(c.total)}</span><span class="go">${ic('chevron-right')}</span>`);
+  patch($('#aside'), `${U.tab === 'projet' ? '' : `<div class="fac">${facadeSVG(facadeModel(S))}</div>`}<div class="lbl">Total HT</div><div class="amt">${chf(c.total)}</div><div class="lbl">${fh(c.amuH)} d’accompagnement</div>
+   <div style="margin-top:18px"><button class="btn p" data-a="pdfContrat">${ic('file-signature', 'sm')}Contrat à signer</button><button class="btn" data-a="pptx">${ic('presentation', 'sm')}PowerPoint</button><button class="btn" data-a="pdfSlides">${ic('file-down', 'sm')}Présentation PDF</button><button class="btn" data-a="present" data-n="0">${ic('monitor-play', 'sm')}Présenter</button></div>`);
 }
-function go(t) { U.scroll[U.tab] = window.scrollY; U.tab = t; try { history.replaceState(null, '', '#' + t); } catch (e) { } render(false); window.scrollTo(0, U.scroll[t] || 0); }
+function go(t) { U.scroll[U.tab] = window.scrollY; U.tab = t; try { history.replaceState(null, '', '#' + t); } catch (e) { } render(); window.scrollTo(0, U.scroll[t] || 0); }
 function changed(rr) { persist(); if (rr) render(); else live(); }
 
 /* ===== Actions ===== */
@@ -1005,7 +1029,7 @@ const ACT = {
   sheetClose: () => { U.sheet = false; renderSheet(); },
   new: () => { clearTimeout(saveT); saveDossier(); const t = S.theme; S = defaults(); S.theme = t; persist(); U.sheet = false; renderSheet(); go('projet'); toast('Nouveau dossier'); },
   dup: () => { clearTimeout(saveT); saveDossier(); S = JSON.parse(JSON.stringify(S)); S.id = uid(); S.projet.rue = (S.projet.rue || 'Dossier') + ' (copie)'; persist(); renderSheet(); render(); toast('Dossier dupliqué'); },
-  openD: b => { const d = dossiers.find(x => x.id === b.dataset.id); if (!d || d.id === S.id) { U.sheet = false; renderSheet(); return; } try { clearTimeout(saveT); saveDossier(); S = migrate(JSON.parse(d.data)); persist(); applyTheme(); U.sheet = false; renderSheet(); render(false); toast('Dossier ouvert'); } catch (e) { toast('Dossier illisible'); } },
+  openD: b => { const d = dossiers.find(x => x.id === b.dataset.id); if (!d || d.id === S.id) { U.sheet = false; renderSheet(); return; } try { clearTimeout(saveT); saveDossier(); S = migrate(JSON.parse(d.data)); persist(); applyTheme(); U.sheet = false; renderSheet(); U.shown = null; render(); toast('Dossier ouvert'); } catch (e) { toast('Dossier illisible'); } },
   delD: async b => { const id = b.dataset.id; if (U.delArm !== id) { U.delArm = id; renderSheet(); return; } U.delArm = null; if (DB && !cloudErr) { try { await DB.collection('dossiers').doc(id).delete(); } catch (e) { toast('Suppression impossible'); } } const l = localList(); delete l[id]; try { localStorage.setItem('amu.list', JSON.stringify(l)); } catch (e) { } if (!DB || cloudErr) dossiers = dossiers.filter(d => d.id !== id); renderSheet(); toast('Dossier supprimé'); },
   expJson: () => saveFile(fileBase() + '.json', JSON.stringify(S, null, 1)),
   impJson: () => $('#impFile').click(),
@@ -1027,7 +1051,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'impFile' && t.files[0]) { const r = new FileReader(); r.onload = () => { try { S = migrate(JSON.parse(r.result)); persist(); applyTheme(); U.sheet = false; renderSheet(); render(false); toast('Dossier importé'); } catch (er) { toast('Fichier non reconnu'); } }; r.readAsText(t.files[0]); return; }
+  if (t.id === 'impFile' && t.files[0]) { const r = new FileReader(); r.onload = () => { try { S = migrate(JSON.parse(r.result)); persist(); applyTheme(); U.sheet = false; renderSheet(); U.shown = null; render(); toast('Dossier importé'); } catch (er) { toast('Fichier non reconnu'); } }; r.readAsText(t.files[0]); return; }
   if (t.dataset.rr === 'c') { if (t.dataset.b?.startsWith('theme.')) renderSheet(); render(); }
   else if (U.tab === 'contrat' && t.dataset.b?.startsWith('contrat.')) { const p = $('#paper'); if (p) p.innerHTML = contractHTML(contractModel(S, compute(S))); }
 });
@@ -1046,7 +1070,7 @@ function boot() {
   $('#nav').innerHTML = TABS.map(t => `<button data-a="tab" data-t="${t.id}"><span class="bub">${ic(t.ic)}</span>${t.t}</button>`).join('');
   $('#pill').dataset.a = 'pill';
   const h = location.hash.slice(1); if (VIEWS[h]) U.tab = h;
-  render(false); setStatus('ok');
+  U.shown = null; render(); setStatus('ok');
 }
 
 /* ===== Polices (intégrées) ===== */
