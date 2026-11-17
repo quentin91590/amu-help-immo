@@ -83,7 +83,7 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
 .band{margin:0 -16px;padding:22px 16px 0;background:var(--p);color:#fff;position:relative;overflow:hidden}
 .band .ttl{color:#fff;margin-top:6px}
 .band .lead{color:color-mix(in srgb,#fff 78%,var(--p))}
-.facade{display:block;width:100%;height:auto;max-height:440px;margin:10px auto 0}
+.facade{display:block;width:100%;height:230px;margin:16px auto 0}
 .addr{display:flex;gap:8px;margin-top:4px}
 .addr input{background:transparent;border:0;border-bottom:1.5px solid color-mix(in srgb,#fff 35%,var(--p));color:#fff;border-radius:0;padding:6px 0;font:300 26px/1.15 var(--display);letter-spacing:.05em;text-transform:uppercase;width:100%}
 .addr input::placeholder{color:color-mix(in srgb,#fff 55%,var(--p))}
@@ -371,6 +371,9 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
   #nav button{font-size:12px}
   main{padding:0 32px}
   .band{margin:0 -32px;padding:30px 32px 0;border-radius:0 0 32px 32px}
+  .band.hero{display:grid;grid-template-columns:1fr 300px;gap:36px;align-items:end;padding-top:36px}
+  .band.hero .htx{align-self:center;padding-bottom:26px}
+  .band.hero .facade{height:250px;margin:0}
   .band.total{padding-bottom:26px}
   .subnav{margin:0 -32px;padding:10px 32px}
   .thumbs{margin:0 -32px;padding-left:32px}
@@ -390,7 +393,8 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
 #aside .amt{font:300 40px/1 var(--display);color:var(--nuit);margin:6px 0 4px}
 #aside .lbl{color:var(--mut);font-size:13.5px;font-weight:600}
 #aside .btn{width:100%;margin-top:8px;justify-content:flex-start}
-#aside .fac{border-radius:18px;overflow:hidden;background:var(--p);margin-bottom:18px}
+#aside .fac{border-radius:18px;overflow:hidden;background:var(--p);margin-bottom:18px;padding:16px 16px 0}
+#aside .fac .facade{height:150px;margin:0}
 
 /* ---------- impression (fichier ouvert hors de Claude) ---------- */
 @media print{
@@ -690,8 +694,7 @@ function facadeModel(s) {
   const H = rh + 0.32 + fl * fhh + gh;
   const side = Math.max(1.4, Wd * 0.07), SW = Wd + side * 2, top = 1.1, SH = H + top + 0.5, x0 = side, yb = top + H;
   const R = [], rect = (x, y, w, h, fill, r = 0) => R.push({ x, y, w, h, fill, r });
-  let seed = hashStr((p.rue || 'x') + N + A + X);
-  const rnd = () => { seed = Math.imul(seed ^ (seed >>> 15), 2246822507) >>> 0; seed = Math.imul(seed ^ (seed >>> 13), 3266489909) >>> 0; return (seed >>> 0) / 4294967296; };
+  const lit = (...k) => { let h = hashStr(k.join('|')); h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   rect(0, yb, SW, 0.09, C.ground);
   rect(x0 + 0.45, top, Wd - 0.9, rh, C.roof, 0.35);
   const yc = top + rh, yw = yc + 0.32, yg = yw + fl * fhh;
@@ -700,11 +703,11 @@ function facadeModel(s) {
   const bays = [];
   for (let b = 0; b < A; b++) { const bx = x0 + mx + b * (bw + bg + mx * .6); bays.push(bx); }
   for (let b = 1; b < A; b++) rect(bays[b] - (bg + mx * .6) / 2 - 0.12, yw, 0.24, fl * fhh + gh, C.wall2);
-  bays.forEach(bx => {
-    for (let i = 0; i < wpb; i += 2) rect(bx + i * cw + 0.05, top + rh * 0.3, ww * 0.85, rh * 0.5, rnd() < .25 ? C.lit : C.glass, 0.12);
+  bays.forEach((bx, b) => {
+    for (let i = 0; i < wpb; i += 2) rect(bx + i * cw + 0.05, top + rh * 0.3, ww * 0.85, rh * 0.5, lit('d', b, i) < .25 ? C.lit : C.glass, 0.12);
     for (let f = 0; f < fl; f++) for (let i = 0; i < wpb; i++) {
       const wx = bx + i * cw, wy = yw + f * fhh + (fhh - wh) / 2 - 0.1;
-      rect(wx, wy, ww, wh, rnd() < .2 ? C.lit : C.glass, 0.06);
+      rect(wx, wy, ww, wh, lit('w', b, fl - f, i) < .2 ? C.lit : C.glass, 0.06);
       rect(wx - 0.08, wy + wh, ww + 0.16, 0.11, C.sill);
     }
   });
@@ -722,7 +725,7 @@ function facadeModel(s) {
   return { w: SW, h: SH, rects: R, floors: fl, extraArcades: Math.max(0, X - ax) };
 }
 function facadeSVG(f, cls = 'facade') {
-  return `<svg class="${cls}" viewBox="0 0 ${f.w.toFixed(2)} ${f.h.toFixed(2)}" role="img" aria-label="Façade de l’immeuble">${f.rects.map(r => `<rect x="${r.x.toFixed(3)}" y="${r.y.toFixed(3)}" width="${r.w.toFixed(3)}" height="${r.h.toFixed(3)}" rx="${r.r}" fill="${r.fill}"/>`).join('')}</svg>`;
+  return `<svg class="${cls}" viewBox="0 0 ${f.w.toFixed(2)} ${f.h.toFixed(2)}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Façade de l’immeuble">${f.rects.map(r => `<rect x="${r.x.toFixed(3)}" y="${r.y.toFixed(3)}" width="${r.w.toFixed(3)}" height="${r.h.toFixed(3)}" rx="${r.r}" fill="${r.fill}"/>`).join('')}</svg>`;
 }
 
 /* ===== Logo Help-immo (vectoriel, d'après le logo du site) ===== */
@@ -809,9 +812,9 @@ const chip = (o, path, on, cls = '') => `<button class="chip ${cls} ${on ? 'on' 
 /* --- Projet --- */
 function vProjet() {
   const p = S.projet, f = facadeModel(S), act = (i, who, a, b) => `<div class="actor"><span class="bubble sm">${ic(i)}</span><div class="who">${who}</div><div class="pair">${field('Nom', a[0], { ph: a[1] })}${field('Représenté par', b[0], { ph: b[1] })}</div></div>`;
-  return `<section class="band">
+  return `<section class="band hero"><div class="htx">
   <div class="addr"><input data-b="projet.rue" data-live="1" value="${esc(p.rue)}" placeholder="Rue et numéro" aria-label="Rue et numéro"></div>
-  <div class="addr addr2"><input data-b="projet.npa" data-live="1" value="${esc(p.npa)}" placeholder="NPA" inputmode="numeric" aria-label="NPA"><input data-b="projet.ville" data-live="1" value="${esc(p.ville)}" placeholder="Localité" aria-label="Localité"></div>
+  <div class="addr addr2"><input data-b="projet.npa" data-live="1" value="${esc(p.npa)}" placeholder="NPA" inputmode="numeric" aria-label="NPA"><input data-b="projet.ville" data-live="1" value="${esc(p.ville)}" placeholder="Localité" aria-label="Localité"></div></div>
   ${facadeSVG(f)}</section>
   <div class="kpis">${kpi('house', 'Logements', 'projet.logements', 1, 600)}${kpi('door-open', 'Allées', 'projet.allees', 1, 6)}${kpi('store', 'Arcades', 'projet.arcades', 0, 24)}${kpi('layers', 'Étages', 'projet.etages', 1, 12, f.floors)}</div>
   <div class="card" style="margin-top:10px"><div class="grid2">${field('Année de construction', 'projet.annee', { type: 'number', ph: '1890' })}${field('Objectif énergétique', 'projet.label', { sel: LABELS })}</div>${field('Affectation', 'projet.affectation')}</div>
@@ -970,7 +973,7 @@ function renderSheet() {
 const VIEWS = { projet: vProjet, amu: vAmu, cadrage: vCadrage, prest: vPrest, planning: vPlanning, contrat: vContrat };
 function render(keepScroll = true) {
   const y = window.scrollY;
-  $('#view').innerHTML = `<div class="view">${VIEWS[U.tab]()}</div>`;
+  $('#view').innerHTML = `<div class="${U.shown === U.tab ? '' : 'view'}">${VIEWS[U.tab]()}</div>`; U.shown = U.tab;
   if (keepScroll) window.scrollTo(0, y);
   $$('#nav button').forEach(b => { const on = b.dataset.t === U.tab; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   live();
@@ -1020,7 +1023,6 @@ document.addEventListener('input', e => {
   let v = t.value; if (t.type === 'number') v = v === '' ? '' : +v;
   setP(S, t.dataset.b, v);
   if (t.dataset.b.startsWith('theme.')) applyTheme();
-  if (t.dataset.b.startsWith('projet.') && $('.facade') && ['projet.rue'].includes(t.dataset.b)) $('.band .facade').outerHTML = facadeSVG(facadeModel(S));
   changed(false);
 });
 document.addEventListener('change', e => {
