@@ -629,7 +629,7 @@ function defaults() {
 const isObj = o => o && typeof o === 'object' && !Array.isArray(o);
 function merge(d, o) { const r = { ...d }; for (const k in o) r[k] = isObj(d[k]) && isObj(o[k]) && Object.keys(d[k]).length ? merge(d[k], o[k]) : o[k]; return r; }
 const migrate = o => merge(defaults(), o || {});
-const dossierName = s => [s.projet.rue, s.projet.ville].filter(Boolean).join(', ') || 'Nouveau dossier';
+const dossierName = s => s.projet.rue ? [s.projet.rue, s.projet.ville].filter(Boolean).join(', ') : 'Nouveau dossier';
 const adresse = s => [s.projet.rue, [s.projet.npa, s.projet.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
 let S = (() => { try { const j = localStorage.getItem('amu.cur'); if (j) return migrate(JSON.parse(j)); } catch (e) { } return defaults(); })();
