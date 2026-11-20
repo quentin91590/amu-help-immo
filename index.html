@@ -531,6 +531,9 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
 .addc{display:inline-flex;align-items:center;gap:6px;margin:10px 2px 0;border:0;background:none;padding:6px 4px;color:var(--mut);font-weight:600;font-size:13.5px;border-radius:8px}
 .addc:hover,.addc:focus-visible{color:var(--p)}
 .addc svg.i{width:15px;height:15px}
+.slide .vlink{display:flex;align-items:center;justify-content:center;gap:.6em;background:rgba(0,0,0,.35);color:#fff;font:600 2.2cqw var(--ui);text-decoration:none}
+.slide .vlink svg.i{width:3cqw;height:3cqw}
+.slide iframe{position:absolute}
 </style>
 </head>
 <body>
@@ -1852,6 +1855,8 @@ function slideHTML(sl, thumb) {
     if (it.k === 'rect') return `<i style="${box};background:${it.fill === 'none' ? 'transparent' : it.fill};border-radius:${cq(Math.min(it.r || 0, it.w / 2, it.h / 2))};${it.line ? `box-shadow:inset 0 0 0 ${cq((it.lw || .75) / 72)} ${it.line}` : ''}${op}"></i>`;
     if (it.k === 'ell') return `<i style="${box};border-radius:50%;background:${it.fill || 'transparent'};${it.line ? `box-shadow:inset 0 0 0 ${cq((it.lw || .75) / 72)} ${it.line}` : ''}"></i>`;
     if (it.k === 'img') return `<img style="${box};object-fit:${it.fit === 'cover' ? 'cover' : it.fit === 'contain' ? 'contain' : 'fill'}" src="${thumb && it.th ? it.th : it.src}" alt=""${/^data:/.test(it.src) ? '' : ' loading="lazy" decoding="async"'}>`;
+    if (it.k === 'video') { const u = vidURL(it); if (thumb || !u) return ''; return it.yt ? `<iframe style="${box};border:0;background:#000" src="https://www.youtube-nocookie.com/embed/${it.yt}?rel=0&modestbranding=1&playsinline=1" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`
+      : `<a class="vlink" style="${box}" href="${esc(u)}" target="_blank" rel="noopener">${ic('monitor-play')}<span>Voir la vidéo</span></a>`; }
     if (it.k === 'icon') return `<svg class="ico" style="${box}" viewBox="0 0 24 24" stroke="${it.color}" stroke-width="2">${(ICONS[it.name] || []).map(d => `<path d="${d}"/>`).join('')}</svg>`;
     if (it.k === 'line') return `<svg class="lines" viewBox="0 0 ${SX} ${SY}" preserveAspectRatio="none"><line x1="${it.x1}" y1="${it.y1}" x2="${it.x2}" y2="${it.y2}" stroke="${it.color}" stroke-width="${it.w / 72}" ${it.dash ? `stroke-dasharray="${5 / 72} ${4 / 72}"` : ''}/></svg>`;
     if (it.k === 'text') { const body = it.bul ? it.s.split('\n').map(l => `<span class="b">${esc(l)}</span>`).join('') : `<span>${esc(it.s).replace(/\n/g, '<br>')}</span>`;
@@ -1861,6 +1866,9 @@ function slideHTML(sl, thumb) {
   return `<div class="slide" style="background:${sl.bg || '#fff'};aspect-ratio:${SX}/${SY};--ar:${(SX / SY).toFixed(4)}">${html.join('')}</div>`;
 }
 
+/* Vidéos : YouTube intégré, autre lien ouvert à part */
+function ytId(u) { const m = /(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([\w-]{11})/.exec(u || ''); return m ? m[1] : ''; }
+const vidURL = it => it.yt ? `https://www.youtube.com/watch?v=${it.yt}` : it.url || '';
 /* --- Icônes en PNG (PowerPoint / PDF) --- */
 const _png = {};
 function iconPNG(name, color) {
@@ -1900,6 +1908,7 @@ function pptxAddSlides(pp, slides) {
       else if (it.k === 'line') { const x = Math.min(it.x1, it.x2), y = Math.min(it.y1, it.y2); sd.addShape(pp.ShapeType.line, { x, y, w: Math.abs(it.x2 - it.x1) || .001, h: Math.abs(it.y2 - it.y1) || .001, flipV: (it.x2 < it.x1) !== (it.y2 < it.y1), line: { color: h(it.color), width: it.w, dashType: it.dash ? 'dash' : 'solid' } }); }
       else if (it.k === 'icon') sd.addImage({ data: iconPNG(it.name, it.color), x: it.x, y: it.y, w: it.w, h: it.h });
       else if (it.k === 'img') sd.addImage({ data: it.src, x: it.x, y: it.y, w: it.w, h: it.h });
+      else if (it.k === 'video' && it.yt) sd.addMedia({ type: 'online', link: `https://www.youtube.com/embed/${it.yt}`, x: it.x, y: it.y, w: it.w, h: it.h });
       else if (it.k === 'text' && it.s) {
         const o = { x: it.x, y: it.y, w: it.w, h: it.h, fontFace: pptFace(it.f), fontSize: sz(it), bold: it.f === 'FS' || it.f === 'FB' || it.f === 'MB', color: h(it.color), align: it.align, valign: it.valign, margin: 0, charSpacing: it.ls || undefined, fit: 'none', paraSpaceBefore: 0, paraSpaceAfter: 0, isTextBox: true };
         if (it.lh) o.lineSpacing = Math.round(sz(it) * it.lh * 10) / 10;
@@ -1945,6 +1954,7 @@ async function exportSlidesPDF() {
           if (it.op != null) d.restoreGraphicsState(); }
         else if (it.k === 'ell') { if (it.fill) d.setFillColor(it.fill); if (it.line) { d.setDrawColor(it.line); d.setLineWidth(it.lw || .75); } d.ellipse((it.x + it.w / 2) * K, (it.y + it.h / 2) * K, it.w / 2 * K, it.h / 2 * K, it.fill && it.line ? 'FD' : it.fill ? 'F' : 'S'); }
         else if (it.k === 'line') { d.setDrawColor(it.color); d.setLineWidth(it.w); if (it.dash) d.setLineDashPattern([5, 4], 0); d.line(it.x1 * K, it.y1 * K, it.x2 * K, it.y2 * K); if (it.dash) d.setLineDashPattern([], 0); }
+        else if (it.k === 'video') { const u = vidURL(it); if (u) d.link(it.x * K, it.y * K, it.w * K, it.h * K, { url: u }); }
         else if (it.k === 'icon') d.addImage(iconPNG(it.name, it.color), 'PNG', it.x * K, it.y * K, it.w * K, it.h * K, undefined, 'FAST');
         else if (it.k === 'img') { try { d.addImage(it.src, /^data:image\/png/.test(it.src) ? 'PNG' : 'JPEG', it.x * K, it.y * K, it.w * K, it.h * K); } catch (er) { } }
         else if (it.k === 'text' && it.s) {
@@ -2214,7 +2224,7 @@ function buildOcba(s, c) {
   const footT = () => [...(DP ? [img(.136, 6.48, 1.016, 1.016, D + 'ge.png')] : []), img(9.393, 6.925, .471, .475, D + 'hi.png'),
     T(1.152, 7.2, 7.98, .24, `Tarifs valables jusqu’au ${k.validite || '31.12.2027'}${DP ? ' dans le cadre exclusif du programme de la transition écologique (DPTE)' : ', hors taxes'}`, { size: 8.5, f: 'M', color: OC.grey, align: 'center' })];
   const head = (t1, t2) => [T(.543, .44, 8.92, .44, t1, { size: 23, f: 'MB', color: OC.teal }), T(.543, .92, 8.92, .34, t2, { size: 14, f: 'M', color: OC.grey })];
-  const stat = n => { const z = String(n).padStart(2, '0'); return { id: 'o' + n, w: 10, h: 7.5, tpl: n, items: [img(0, 0, 10, 7.5, `${D}s${z}.jpg`, 'fill', `${D}t${z}.jpg`)] }; };
+  const stat = n => { const z = String(n).padStart(2, '0'); return { id: 'o' + n, w: 10, h: 7.5, tpl: n, items: [img(0, 0, 10, 7.5, `${D}s${z}.jpg`, 'fill', `${D}t${z}.jpg`), ...(n === 11 ? [{ k: 'video', x: .299, y: 1.113, w: 9.377, h: 5.596, yt: 'iqwX01Lr2-Q' }] : [])] }; };
   const slide = (id, items, pn) => ({ id, w: 10, h: 7.5, items, pn });
 
   /* Frise verticale (modèle « Estimation des tarifs ») : titre, description, libellé, valeur */
@@ -2521,7 +2531,7 @@ async function importPPTX(file) {
     const rd = async p => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
     const kids = (el, n) => el ? [...el.children].filter(c => c.localName === n) : [], kid = (el, n) => kids(el, n)[0] || null;
     const resolve = (base, t) => { if (t.startsWith('/')) return t.slice(1); const parts = base.split('/'); parts.pop(); t.split('/').forEach(seg => { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); }); return parts.join('/'); };
-    const rels = async path => { const x = await rd(path.replace(/[^/]+$/, '') + '_rels/' + path.split('/').pop() + '.rels'), m = {}; if (x) for (const r of x.getElementsByTagName('Relationship')) m[r.getAttribute('Id')] = { t: resolve(path, r.getAttribute('Target')), type: r.getAttribute('Type') || '' }; return m; };
+    const rels = async path => { const x = await rd(path.replace(/[^/]+$/, '') + '_rels/' + path.split('/').pop() + '.rels'), m = {}; if (x) for (const r of x.getElementsByTagName('Relationship')) m[r.getAttribute('Id')] = { t: resolve(path, r.getAttribute('Target')), raw: r.getAttribute('Target'), type: r.getAttribute('Type') || '' }; return m; };
     const pres = await rd('ppt/presentation.xml'); if (!pres) throw new Error('pptx');
     const sz = pres.getElementsByTagName('p:sldSz')[0], cx = +sz.getAttribute('cx'), cy = +sz.getAttribute('cy');
     const DW = cx / 914400, DH = cy / 914400, k = 1, ox = 0, oy = 0, EM = v => v / 914400 * k;
@@ -2574,7 +2584,10 @@ async function importPPTX(file) {
             const mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml', bmp: 'image/bmp' }[e]; if (!f || !mime) { skipped++; continue; }
             let src = `data:${mime};base64,` + await f.async('base64');
             try { if (/gif|bmp|svg/.test(mime)) src = await toPNG(src); const sr = el.getElementsByTagName('a:srcRect')[0]; if (sr && [...sr.attributes].length) src = await cropSrc(src, sr); } catch (er) { }
-            items.push({ k: 'img', ...b, src }); continue;
+            items.push({ k: 'img', ...b, src });
+            const vf = el.getElementsByTagName('a:videoFile')[0], vu = vf && srel[vf.getAttribute('r:link')]?.raw;
+            if (vu && /^https?:/i.test(vu)) items.push({ k: 'video', ...b, ...(ytId(vu) ? { yt: ytId(vu) } : { url: vu }) });
+            continue;
           }
           const lnEl = kid(spPr, 'ln'), lineCol = lnEl && !kid(lnEl, 'noFill') ? color(kid(lnEl, 'solidFill')) : null, lw = lnEl?.getAttribute('w') ? +lnEl.getAttribute('w') / 12700 : .75;
           const geom = kid(spPr, 'prstGeom')?.getAttribute('prst') || (kid(spPr, 'custGeom') ? 'cust' : 'rect');
