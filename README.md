@@ -8,7 +8,7 @@ Outil de présentation et de contractualisation de l’assistance à la maîtris
 - **Prestations** : heures et options ajustables, calcul en direct
 - **Calendrier** : calendrier prévisionnel recalculé, frise interactive (survol et clic)
 - **Contrat** : contrat à signer en PDF ou Word, suggestions complémentaires ou masquées, subvention et second mandataire au choix, annexes jointes (PDF, images)
-- **Présentation** : modèle Help-Immo (dossier `modele/`) dont la fin est mise à jour selon le projet, ou synthèse du dossier ; personnalisation pour le client (logo, photo de couverture, fond, textes) ; plein écran, PowerPoint, PDF, choix des diapositives, réimport d’un PowerPoint modifié
+- **Présentation** : modèle Help-Immo (dossier `modele/`) complété par le projet (rôle et limites de l’AMU, collaborateur, déroulé, calendrier, tarifs) ; personnalisation pour le client (date, logo client, logos partenaires, photos, textes, mention DPTE) ; plein écran avec vidéo, PowerPoint, PDF, choix des diapositives, réimport d’un PowerPoint modifié
 
 Les dossiers restent dans le navigateur de l’appareil (export / import en .json pour les partager). Bouton Annuler (Ctrl+Z) pour revenir en arrière.
 

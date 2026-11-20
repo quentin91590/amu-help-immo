@@ -554,6 +554,15 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
 .person.hasph .av{display:none}
 .eq2 .person.hasph{grid-template-columns:1fr minmax(120px,32%)}
 @media (max-width:600px){.person.hasph,.eq2 .person.hasph{grid-template-columns:1fr 118px}}
+.person .av.ph{overflow:hidden;background:#E9E9E8!important;padding:0}
+.person .av.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.grp .gx{font-weight:500;color:var(--mut);opacity:.8;margin-left:4px;font-size:12.5px}
+.lgs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lgi{position:relative;display:grid;place-items:center;width:88px;height:52px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:6px}
+.lgi img{max-width:100%;max-height:100%;object-fit:contain}
+.lgi button{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--mut);display:grid;place-items:center;padding:0}
+.lgi button svg.i{width:13px;height:13px}
+.lgadd{display:inline-flex;align-items:center;gap:6px;height:52px;padding:0 14px;border:1.5px dashed var(--line);border-radius:12px;background:none;color:var(--p);font-weight:600;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -678,7 +687,7 @@ const PHASES = ['Avant', 'Chantier', 'Après'];
 const PHASES_L = ['Avant le début des travaux', 'Début du chantier', 'À la fin des travaux'];
 
 const TEAM = [
-  { id: 'sr', ini: 'SR', ph: 'modele/stephane.jpg', name: 'Stéphane Robyr', org: 'Help-immo', focus: 'Technique & chantier', col: 'p',
+  { id: 'sr', ini: 'SR', ph: 'modele/stephane.jpg', av: 'modele/stephane-av.jpg', name: 'Stéphane Robyr', org: 'Help-immo', focus: 'Technique & chantier', col: 'p',
     tags: ['Génie civil', 'Responsable travaux', 'Stratégie de patrimoine', 'Formateur'],
     bio: ['Plus de 25 ans dans l’immobilier', '20 ans responsable travaux en régie', 'AMU accrédité depuis 2020'],
     mail: 'robyrstephane@gmail.com', tel: '+41 79 626 54 60', adr: 'Route du Grand-Lancy 100, 1212 Grand-Lancy',
@@ -1000,7 +1009,7 @@ function defaults() {
     planning: { debut: `${deb.getFullYear()}-${String(deb.getMonth() + 1).padStart(2, '0')}`, duree: 24, ov: {} },
     contrat: { ref: `${String(now.getFullYear()).slice(2)}01`, subOn: true, lieu: 'Genève', date: isoDate(now), mode: 'estimation', factu: 'etape', paiement: 30, validite: '31.12.2027', subvention: 0, signMO: '', fonctionMO: '', annexes: [] },
     team: { po: false },
-    pres: { hide: {}, useDeck: true, model: 'ocba', custom: { logo: '', logoR: 0, cover: 'modele', coverImg: '', fond: '', title: '', sub: '', line: '', dpte: true } },
+    pres: { hide: {}, useDeck: true, model: 'ocba', custom: { logo: '', logoR: 0, logos: [], poPhoto: '', cover: 'modele', coverImg: '', fond: '', title: '', sub: '', line: '', date: '', dpteOn: false } },
     theme: { p: BRAND.p, a: BRAND.a },
   };
 }
@@ -1262,9 +1271,10 @@ async function processPhoto(file, i) {
 function vAmu() {
   const o = S.prest.opts, C = S.prest.comites, us = usagers(S);
   const steps = STEPS.map(st => ({ ...st, off: st.opt && !o[st.opt] }));
-  const person = t => `<div class="card person ${t.ph ? 'hasph' : ''}">${t.ph ? '<div class="pin">' : ''}${t.id === 'po' ? `<button class="rmp" data-a="bool" data-p="team.po" aria-label="Retirer ${t.name}" data-tip="Retirer du mandat">${ic('x', 'sm')}</button>` : ''}<div class="row"><span class="av" style="background:${t.col === 'p' ? S.theme.p : S.theme.a}">${t.ini}</span><div><div class="nm">${t.name}</div><div class="org">${t.org}</div><span class="fc" style="background:${t.col === 'p' ? 'var(--p2)' : 'var(--at)'};color:${t.col === 'p' ? 'var(--p)' : 'var(--a)'}">${t.focus}</span></div></div>
+  const big = t => t.ph && !S.team.po;
+  const person = t => `<div class="card person ${big(t) ? 'hasph' : ''}">${big(t) ? '<div class="pin">' : ''}${t.id === 'po' ? `<button class="rmp" data-a="bool" data-p="team.po" aria-label="Retirer ${t.name}" data-tip="Retirer du mandat">${ic('x', 'sm')}</button>` : ''}<div class="row"><span class="av ${t.av ? 'ph' : ''}" style="background:${t.col === 'p' ? S.theme.p : S.theme.a}">${t.av ? `<img src="${t.av}" alt="">` : t.ini}</span><div><div class="nm">${t.name}</div><div class="org">${t.org}</div><span class="fc" style="background:${t.col === 'p' ? 'var(--p2)' : 'var(--at)'};color:${t.col === 'p' ? 'var(--p)' : 'var(--a)'}">${t.focus}</span></div></div>
     <div class="mini">${t.tags.map(x => `<span>${x}</span>`).join('')}</div><ul>${t.bio.map(x => `<li>${x}</li>`).join('')}</ul>
-    <div class="ct"><span>${ic('mail')}${t.mail}</span><span>${ic('phone')}${t.tel}</span></div>${t.ph ? `</div><div class="pph"><img src="${t.ph}" alt="${t.name}" loading="lazy"></div>` : ''}</div>`;
+    <div class="ct"><span>${ic('mail')}${t.mail}</span><span>${ic('phone')}${t.tel}</span></div>${big(t) ? `</div><div class="pph"><img src="${t.ph}" alt="${t.name}" loading="lazy"></div>` : ''}</div>`;
   const li = (r, col) => `<li><span class="bubble sm" ${col ? `style="color:${col}"` : ''}>${ic(r.ic)}</span><span><b>${r.t}</b><small>${r.d}</small></span></li>`;
   let ph = -1;
   return `<nav class="subnav" aria-label="Sections">${[['role', 'Rôle'], ['cadre', 'Cadre'], ['parcours', 'Déroulé'], ['tandem', 'Prestataires'], ['refs', 'Références']].map(([a, t]) => `<button data-a="sub" data-id="${a}">${t}</button>`).join('')}</nav>
@@ -1388,7 +1398,7 @@ function vContrat() {
    <div class="legend">${parts.map(([v, col, t]) => `<span><i style="background:${col}"></i>${t} ${chf(v)}</span>`).join('')}</div></section>
   <h3>Documents et annexes</h3>
   <div class="exp"><div class="ex main"><span class="bubble">${ic('file-signature')}</span><div><b>Contrat à signer</b><br><small>${nSig} signatures</small></div><button class="btn sm inv" data-a="pdfContrat">${ic('download', 'sm')}PDF</button><button class="btn sm inv" data-a="docxContrat">${ic('download', 'sm')}Word</button></div>
-   <button class="ex main pres" data-a="presSheet"><span class="bubble">${ic('presentation')}</span><div><b>Présentation</b><br><small>${slides.length} diapositives${U.deck && S.pres.useDeck ? ', version importée' : S.pres.model === 'outil' ? ', modèle synthèse' : ', modèle Help-Immo'} : présenter, PowerPoint, PDF</small></div>${ic('chevron-right')}</button></div>
+   <button class="ex main pres" data-a="presSheet"><span class="bubble">${ic('presentation')}</span><div><b>Présentation</b><br><small>${slides.length} diapositives${U.deck && S.pres.useDeck ? ', version importée' : ', modèle Help-Immo'} : présenter, PowerPoint, PDF, personnaliser</small></div>${ic('chevron-right')}</button></div>
   ${annexesCard()}
   <h3>Diapositives</h3><div class="thumbs">${slides.map((sl, i) => `<button data-a="present" data-n="${i}" aria-label="Diapositive ${i + 1}">${slideHTML(sl, 1)}</button>`).join('')}</div>
   <h3>Conditions</h3>
@@ -1441,7 +1451,7 @@ function patch(el, html) {
 }
 
 /* --- Rendu général --- */
-const VERSION = '1.5.3';
+const VERSION = '1.6';
 const VIEWS = { projet: vProjet, amu: vAmu, cadrage: vCadrage, prest: vPrest, planning: vPlanning, contrat: vContrat };
 function render() {
   if (U.shown === U.tab) patch($('#view'), `<div>${VIEWS[U.tab]()}</div>`);
@@ -1515,7 +1525,9 @@ const ACT = {
   custUp: b => { U.custSlot = b.dataset.k; $('#custFile').click(); },
   custDel: b => { const C = S.pres.custom, k = b.dataset.k; C[k] = ''; if (k === 'logo') C.logoR = 0; if (k === 'coverImg' && C.cover === 'autre') C.cover = 'modele'; changed(1); renderSheet(); },
   custSet: b => { const C = S.pres.custom; if (b.dataset.k === 'fondM') { C.fond = ''; changed(1); renderSheet(); return; } if (b.dataset.v === 'autre' && !C[b.dataset.k === 'cover' ? 'coverImg' : 'fond']) { U.custSlot = b.dataset.k === 'cover' ? 'coverImg' : 'fond'; $('#custFile').click(); return; } C[b.dataset.k] = b.dataset.v; changed(1); renderSheet(); },
-  custDpte: () => { S.pres.custom.dpte = !S.pres.custom.dpte; changed(1); renderSheet(); },
+  custDpte: () => { S.pres.custom.dpteOn = !S.pres.custom.dpteOn; changed(1); renderSheet(); },
+  logoAdd: () => { U.custSlot = 'partner'; $('#custFile').click(); },
+  logoDel: b => { S.pres.custom.logos = S.pres.custom.logos.filter(l => l.id !== b.dataset.id); changed(1); renderSheet(); },
 };
 document.addEventListener('click', e => { const b = e.target.closest('[data-a]'); U.typing = false; if (b) { if (b.getAttribute('aria-disabled') === 'true') return; e.preventDefault(); ACT[b.dataset.a]?.(b, e); } else if (e.target.id === 'sheet') ACT.sheetClose(); });
 document.addEventListener('input', e => {
@@ -1579,16 +1591,15 @@ async function checkUpdate() {
 const SLIDE_DEF = [['cover', 'Couverture'], ['projet', 'Le projet'], ['amu', 'L’AMU'], ['cadre', 'Le cadre'], ['parcours', 'Déroulé du mandat AMU'], ['tandem', 'Prestataires AMU'], ['refs', 'Références récentes'], ['cadrage', 'Cadrage du mandat (si rempli)'], ['prest', 'Prestations AMU'], ['planning', 'Calendrier prévisionnel'], ['honoraires', 'Honoraires'], ['fin', 'Clôture']];
 const heroPhotoBtn = () => `<div class="hbtns">${S.projet.photo ? `<button class="hb" data-a="batPh">${ic('camera', 'sm')}Changer la photo</button><button class="hb" data-a="batPhDel">${ic('x', 'sm')}Retirer la photo</button>` : `<button class="hb" data-a="batPh">${ic('camera', 'sm')}Ajouter une photo</button>`}</div>`;
 function presSheetHTML() {
-  const d = U.deck, useD = useImported(), n = currentSlides().length, M = S.pres.model === 'outil' ? 'outil' : 'ocba';
+  const d = U.deck, useD = useImported(), n = currentSlides().length, M = 'ocba';
   const tog = (id, t) => `<li><span style="flex:1;font-weight:600">${t}</span>${sw(!S.pres.hide[id], 'slideTog', `data-id="${id}" aria-label="${esc(t)}"`, 'p')}</li>`;
-  const listO = () => { const G = [['Présentation Help-Immo', OCBA_SLIDES.slice(0, 15)], ['Votre projet, mis à jour depuis le dossier', OCBA_SLIDES.slice(15, 21)], ['Fin', OCBA_SLIDES.slice(21)]];
+  const listO = () => { const G = [['Présentation Help-Immo', OCBA_SLIDES.filter(x => x[2] === 'a' && (x[0] !== 'pPO' || S.team.po))], ['Votre projet, mis à jour depuis le dossier', OCBA_SLIDES.filter(x => x[2] === 'p')], ['Fin', OCBA_SLIDES.filter(x => x[2] === 'f')]];
     return G.map(([g, L]) => `<div class="grp" style="margin:12px 4px 6px">${g}</div><ul class="dl">${L.map(([id, t]) => tog(id, t)).join('')}</ul>`).join(''); };
   return `<div class="pan" role="dialog" aria-label="Présentation"><div class="grab"></div>
   <div class="row" style="justify-content:space-between"><h1 class="ttl" style="margin:6px 0 2px;font-size:24px">Présentation</h1><button class="ibtn" data-a="sheetClose" aria-label="Fermer">${ic('x')}</button></div>
-  <p class="lead" style="margin-bottom:12px">${n} diapositives${useD ? ', version importée' : M === 'ocba' ? ', modèle Help-Immo et fin mise à jour selon le projet' : ', synthèse du dossier'}.</p>
-  ${useD ? '' : `<div class="seg mdl" role="radiogroup" aria-label="Modèle">${[['ocba', 'Modèle Help-Immo'], ['outil', 'Synthèse projet']].map(([v, t]) => `<button role="radio" aria-checked="${M === v}" class="${M === v ? 'on' : ''}" data-a="pmodel" data-v="${v}">${t}</button>`).join('')}</div>`}
+  <p class="lead" style="margin-bottom:12px">${n} diapositives${useD ? ', version importée' : ', modèle Help-Immo, fin mise à jour selon le projet'}.</p>
   <button class="ex main" data-a="present" data-n="0" style="width:100%"><span class="bubble">${ic('monitor-play')}</span><div><b>Présenter en plein écran</b><br><small>Flèches ou balayage pour avancer</small></div>${ic('chevron-right')}</button>
-  <div class="exp" style="margin-top:10px"><button class="ex" data-a="pptx"><span class="bubble sm">${ic('presentation')}</span><b>PowerPoint</b><small>${!useD && M === 'ocba' ? 'Votre modèle, fin mise à jour' : 'Modifiable, puis réimportable'}</small></button><button class="ex" data-a="pdfSlides"><span class="bubble sm">${ic('file-down')}</span><b>PDF</b><small>À envoyer au client</small></button></div>
+  <div class="exp" style="margin-top:10px"><button class="ex" data-a="pptx"><span class="bubble sm">${ic('presentation')}</span><b>PowerPoint</b><small>${useD ? 'Modifiable, puis réimportable' : 'Votre modèle, fin mise à jour'}</small></button><button class="ex" data-a="pdfSlides"><span class="bubble sm">${ic('file-down')}</span><b>PDF</b><small>À envoyer au client</small></button></div>
   ${useD ? '' : custHTML()}
   ${useD ? '' : `<h3 style="font-size:16px">Diapositives à inclure</h3>${M === 'ocba' ? listO() : `<ul class="dl">${SLIDE_DEF.map(([id, t]) => tog(id, id === 'tandem' ? (team(S).length < 2 ? 'Prestataire AMU' : 'Prestataires AMU') : t)).join('')}</ul>`}`}
   <h3 style="font-size:16px">PowerPoint modifié</h3>
@@ -1601,24 +1612,30 @@ function presSheetHTML() {
 async function custImage(file, slot) {
   try {
     const url = URL.createObjectURL(file), img = new Image(); img.src = url; await img.decode();
-    const logo = slot === 'logo', M = logo ? 700 : 1800, k = Math.min(1, M / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+    const logo = slot === 'logo' || slot === 'partner', M = logo ? 700 : 1800, k = Math.min(1, M / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
     c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); const g = c.getContext('2d');
     if (!logo) { g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); } g.drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-    const C = S.pres.custom; C[slot] = logo ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', .82);
+    const C = S.pres.custom;
+    if (slot === 'partner') { C.logos = [...(C.logos || []), { id: uid().slice(-6), src: c.toDataURL('image/png'), r: c.width / c.height }].slice(-4); changed(1); renderSheet(); toast('Logo ajouté à la présentation'); return; }
+    C[slot] = logo ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', .82);
     if (logo) C.logoR = c.width / c.height; if (slot === 'coverImg') C.cover = 'autre';
     changed(1); renderSheet(); toast(logo ? 'Logo du client ajouté' : 'Image ajoutée');
   } catch (e) { toast('Image illisible'); }
 }
 function custHTML() {
-  const C = S.pres.custom, O = S.pres.model !== 'outil', segB = (k, v, t, on, dis) => `<button class="chip sm2 ${on ? 'on' : ''}" data-a="custSet" data-k="${k}" data-v="${v}" ${dis ? 'aria-disabled="true"' : ''}>${t}</button>`;
+  const C = S.pres.custom, O = true, segB = (k, v, t, on, dis) => `<button class="chip sm2 ${on ? 'on' : ''}" data-a="custSet" data-k="${k}" data-v="${v}" ${dis ? 'aria-disabled="true"' : ''}>${t}</button>`;
   const txt = (k, lab, ph) => `<label class="f"><span>${lab}</span><input data-cust="${k}" value="${esc(C[k])}" placeholder="${esc(ph)}"></label>`;
   return `<h3 style="font-size:16px">Personnaliser pour le client</h3><div class="card cust">
    <div class="ctx" style="border:0;padding-top:0"><span class="lg">${C.logo ? `<img src="${C.logo}" alt="Logo du client">` : ic('image-plus')}</span><span>Logo du client<br><small>${O ? 'Couverture, intercalaire et projet' : 'Couverture'}</small></span>
     ${C.logo ? `<button class="btn sm" data-a="custUp" data-k="logo">Changer</button><button class="del" data-a="custDel" data-k="logo" aria-label="Retirer le logo">${ic('x', 'sm')}</button>` : `<button class="btn sm a" data-a="custUp" data-k="logo">${ic('plus', 'sm')}Ajouter</button>`}</div>
    ${O ? `<div class="grp">${ic('image', 'sm')}Photo de couverture</div><div class="chips">${segB('cover', 'modele', 'Modèle', C.cover === 'modele')}${segB('cover', 'projet', 'Photo du bâtiment', C.cover === 'projet', !S.projet.photo)}${segB('cover', 'autre', C.coverImg ? 'Autre photo' : 'Autre photo…', C.cover === 'autre')}${C.coverImg ? `<button class="del" data-a="custDel" data-k="coverImg" aria-label="Retirer la photo">${ic('x', 'sm')}</button>` : ''}</div>
    <div class="grp">${ic('layers', 'sm')}Fond de l’intercalaire</div><div class="chips">${segB('fondM', 'modele', 'Modèle', !C.fond)}<button class="chip sm2 ${C.fond ? 'on' : ''}" data-a="custUp" data-k="fond">${C.fond ? 'Autre image' : 'Autre image…'}</button>${C.fond ? `<button class="del" data-a="custDel" data-k="fond" aria-label="Retirer le fond">${ic('x', 'sm')}</button>` : ''}</div>
+   ${S.team.po ? `<div class="ctx"><span class="lg">${C.poPhoto ? `<img src="${C.poPhoto}" alt="Pierre Olivier">` : ic('user')}</span><span>Photo de Pierre Olivier<br><small>Sa diapositive de présentation</small></span>${C.poPhoto ? `<button class="btn sm" data-a="custUp" data-k="poPhoto">Changer</button><button class="del" data-a="custDel" data-k="poPhoto" aria-label="Retirer la photo">${ic('x', 'sm')}</button>` : `<button class="btn sm" data-a="custUp" data-k="poPhoto">${ic('plus', 'sm')}Ajouter</button>`}</div>` : ''}
+   <div class="grp">${ic('blocks', 'sm')}Logos partenaires<small class="gx">bas de chaque diapositive</small></div>
+   <div class="lgs">${(C.logos || []).map(l => `<span class="lgi"><img src="${l.src}" alt="Logo"><button data-a="logoDel" data-id="${l.id}" aria-label="Retirer ce logo">${ic('x', 'sm')}</button></span>`).join('')}${(C.logos || []).length < 4 ? `<button class="lgadd" data-a="logoAdd">${ic('plus', 'sm')}Déposer un logo</button>` : ''}</div>
+   <label class="f"><span>Date de la présentation</span><input type="date" data-cust="date" value="${esc(C.date || S.contrat.date || '')}"></label>
    ${txt('title', 'Titre de couverture', 'Assistance à Maîtrise d’Usage')}${txt('sub', 'Sous-titre', 'Accompagner les usagers au cœur des projets de rénovation immobilière')}${txt('line', 'Ligne client', `Offre pour ${S.projet.mo || dossierName(S)}`)}
-   <div class="ctx"><span class="bubble sm">${ic('landmark')}</span><span>Programme DPTE<br><small>Armoiries de Genève et mention du programme</small></span>${sw(C.dpte, 'custDpte', 'aria-label="Programme DPTE"', 'p')}</div>` : ''}
+   <div class="ctx"><span class="bubble sm">${ic('landmark')}</span><span>Programme DPTE<br><small>Armoiries de Genève et mention du programme</small></span>${sw(C.dpteOn, 'custDpte', 'aria-label="Programme DPTE"', 'p')}</div>` : ''}
   </div>`;
 }
 const IDB = {
@@ -1874,7 +1891,7 @@ function buildSlides(s, c) {
   return out.length ? out : slides.slice(0, 1);
 }
 const useImported = () => !!(U.deck && S.pres.useDeck && U.deck.slides?.length);
-const currentSlides = () => useImported() ? JSON.parse(JSON.stringify(U.deck.slides)) : S.pres.model === 'outil' ? buildSlides(S, compute(S)) : buildOcba(S, compute(S));
+const currentSlides = () => useImported() ? JSON.parse(JSON.stringify(U.deck.slides)) : buildOcba(S, compute(S));
 
 /* --- Rendu écran --- */
 const FCSS = { JL: "font-family:Jost;font-weight:300", J: "font-family:Jost;font-weight:400", JM: "font-family:Jost;font-weight:500", F: "font-family:Figtree;font-weight:400", FS: "font-family:Figtree;font-weight:600", FB: "font-family:Figtree;font-weight:700", M: "font-family:Montserrat;font-weight:400", MS: "font-family:Montserrat;font-weight:600", MB: "font-family:Montserrat;font-weight:700" };
@@ -1950,7 +1967,7 @@ function pptxAddSlides(pp, slides) {
   });
 }
 async function exportPPTX() {
-  if (!useImported() && S.pres.model !== 'outil') return exportOcbaPPTX();
+  if (!useImported()) return exportOcbaPPTX();
   busy(true, 'Création du PowerPoint…');
   try {
     await loadScript(LIBS.pptx);
@@ -2208,13 +2225,15 @@ async function exportContract() {
    la fin est construite à partir du dossier : offre, projet, cadrage, calendrier, tarifs. */
 const OC = { teal: '#3A7C97', grey: '#52586B', dark: '#484E5F', line: '#C0D0D7', pale: '#DAEAF1', mut: '#8D93A0', dir: 'modele/' };
 const OCBA_SLIDES = [
-  ['o1', 'Couverture'], ['o2', 'Pourquoi placer les usagers au cœur d’un projet'], ['o3', 'Le rôle de l’AMU'], ['o4', 'La méthodologie habituelle'],
-  ['o5', 'L’accompagnement AMU en 7 étapes'], ['o6', 'Les bénéfices de la démarche'], ['o7', 'Help-Immo, Stéphane Robyr'], ['o8', 'Mission réalisée : Gilbert-Trolliet'],
-  ['o9', 'Mission réalisée : Pâquis'], ['o10', 'Mission réalisée : Cité Choiseul'], ['o11', 'Rétrospective en vidéo'], ['o12', 'Mission en cours : Hutins'],
-  ['o13', 'Missions à venir'], ['o14', 'Intéressé par la démarche AMU ?'], ['o15', 'Contact'],
-  ['pDiv', 'Votre offre AMU', 1], ['pProjet', 'Votre projet', 1], ['pCadrage', 'Cadrage du mandat', 1], ['pCal', 'Calendrier prévisionnel', 1], ['pTarifs', 'Estimation des tarifs', 1], ['pComp', 'Prestations complémentaires', 1],
-  ['o18', 'Opération Quick win'], ['o19', 'Quick win : estimation des tarifs'], ['o20', 'Merci pour votre écoute'],
+  ['o1', 'Couverture', 'a'], ['o2', 'Pourquoi placer les usagers au cœur d’un projet', 'a'], ['o3', 'Le rôle de l’AMU', 'a'], ['pCadre', 'Ce que fait l’AMU, et ce qu’il ne fait pas', 'a'],
+  ['o4', 'La méthodologie habituelle', 'a'], ['o5', 'L’accompagnement AMU en 7 étapes', 'a'], ['o6', 'Les bénéfices de la démarche', 'a'], ['o7', 'Help-Immo, Stéphane Robyr', 'a'],
+  ['pPO', 'Pierre Olivier (si ajouté comme collaborateur)', 'a'], ['o8', 'Mission réalisée : Gilbert-Trolliet', 'a'], ['o9', 'Mission réalisée : Pâquis', 'a'], ['o10', 'Mission réalisée : Cité Choiseul', 'a'],
+  ['o11', 'Rétrospective en vidéo', 'a'], ['o12', 'Mission en cours : Hutins', 'a'], ['o13', 'Missions à venir', 'a'], ['o14', 'Intéressé par la démarche AMU ?', 'a'], ['o15', 'Contact', 'a'],
+  ['pDiv', 'Votre offre AMU', 'p'], ['pProjet', 'Votre projet', 'p'], ['pCadrage', 'Cadrage du mandat (si rempli)', 'p'], ['pDeroule', 'Déroulé du mandat AMU', 'p'], ['pCal', 'Calendrier prévisionnel', 'p'],
+  ['pTarifs', 'Estimation des tarifs', 'p'], ['pComp', 'Prestations complémentaires (si choisies)', 'p'],
+  ['o18', 'Opération Quick win', 'f'], ['o19', 'Quick win : estimation des tarifs', 'f'], ['o20', 'Merci pour votre écoute', 'f'],
 ];
+const OC_VER = '3';
 const OC_DESC = {
   cadrage: 'Comprendre les enjeux et définir le cadre d’intervention de l’AMU',
   info: 'Séance d’information participative collective pour évoquer le projet',
@@ -2248,14 +2267,18 @@ function buildOcba(s, c) {
   const img = (x, y, w, h, src, fit = 'fill', th) => ({ k: 'img', x, y, w, h, src, fit, ...(th ? { th } : {}) });
   const card = (x, y, w, h) => [{ ...R(x, y, w, h, W, .05, OC.line), lw: 1.1 }, R(x, y, .065, h, OC.teal, .03)];
   const name = PARC ? (p.mo || s.parc.programme || 'Votre parc') : (p.rue || 'Votre immeuble');
-  const C = s.pres?.custom || {}, DP = C.dpte !== false, LR = C.logoR || 1;
+  const C = s.pres?.custom || {}, DP = !!C.dpteOn, LR = C.logoR || 1, LOGOS = C.logos || [];
+  /* logos partenaires déposés par l'utilisateur, alignés à partir de x */
+  const partners = (x, y, h) => { const out = []; LOGOS.forEach(l => { const w = Math.min(1.5, h * (l.r || 1)), hh = w / (l.r || 1); out.push(img(x, y + (h - hh) / 2, w, hh, l.src, 'contain')); x += w + .14; }); return out; };
   const logo = (x, y, h, maxW, plate, right) => { if (!C.logo) return []; const w = Math.min(maxW, h * LR), hh = w / LR, xx = right ? x - w : x, yy = y + (h - hh) / 2;
     return [...(plate ? [R(xx - .14, yy - .1, w + .28, hh + .2, '#FFFFFF', .06)] : []), img(xx, yy, w, hh, C.logo, 'contain')]; };
-  const footC = () => [img(.136, 6.89, .471, .475, D + 'hi.png'), ...(SOLO ? [] : [img(.741, 6.89, .465, .475, D + 'cl.png')])];
-  const footT = () => [...(DP ? [img(.136, 6.48, 1.016, 1.016, D + 'ge.png')] : []), img(9.393, 6.925, .471, .475, D + 'hi.png'),
+  const footC = () => [img(.136, 6.89, .471, .475, D + 'hi.png'), ...partners(.741, 6.89, .475)];
+  const footT = () => [...(DP ? [img(.136, 6.48, 1.016, 1.016, D + 'ge.png')] : []), img(9.393, 6.925, .471, .475, D + 'hi.png'), ...partners(DP ? 1.3 : .2, 6.6, .42),
     T(1.152, 7.2, 7.98, .24, `Tarifs valables jusqu’au ${k.validite || '31.12.2027'}${DP ? ' dans le cadre exclusif du programme de la transition écologique (DPTE)' : ', hors taxes'}`, { size: 8.5, f: 'M', color: OC.grey, align: 'center' })];
   const head = (t1, t2) => [T(.543, .44, 8.92, .44, t1, { size: 23, f: 'MB', color: OC.teal }), T(.543, .92, 8.92, .34, t2, { size: 14, f: 'M', color: OC.grey })];
-  const stat = n => { const z = String(n).padStart(2, '0'); return { id: 'o' + n, w: 10, h: 7.5, tpl: n, items: [img(0, 0, 10, 7.5, `${D}s${z}.jpg`, 'fill', `${D}t${z}.jpg`), ...(n === 11 ? [{ k: 'video', x: .299, y: 1.113, w: 9.377, h: 5.596, yt: 'iqwX01Lr2-Q' }] : [])] }; };
+  const stat = n => { const z = String(n).padStart(2, '0'), q = n >= 18 && n <= 19;
+    return { id: 'o' + n, w: 10, h: 7.5, tpl: n, items: [img(0, 0, 10, 7.5, `${D}s${z}.jpg?v=${OC_VER}`, 'fill', `${D}t${z}.jpg?v=${OC_VER}`), ...(n === 11 ? [{ k: 'video', x: .299, y: 1.113, w: 9.377, h: 5.596, yt: 'iqwX01Lr2-Q' }] : []),
+      ...(q && DP ? [img(.136, 6.48, 1.016, 1.016, D + 'ge.png')] : []), ...(q ? partners(DP ? 1.3 : .2, 6.6, .42) : partners(.741, 6.89, .475))] }; };
   const slide = (id, items, pn) => ({ id, w: 10, h: 7.5, items, pn });
 
   /* Frise verticale (modèle « Estimation des tarifs ») : titre, description, libellé, valeur */
@@ -2290,7 +2313,7 @@ function buildOcba(s, c) {
       T(.543, 4.23, 5.6, tl * .42 + .1, title, { size: 24, f: 'MS', color: OC.dark, lh: 1.15 }),
       T(.543, ys, 5.4, sl * .24 + .1, sub, { size: 12, f: 'M', color: OC.grey, lh: 1.3 }),
       T(.543, yl, 5.4, .3, C.line?.trim() || `Offre pour ${p.mo || name}`, { size: 12, f: 'MS', color: OC.teal }),
-      T(.543, yl + .32, 5.4, .26, fmtD(k.date), { size: 10, f: 'M', color: OC.grey }),
+      T(.543, yl + .32, 5.4, .26, fmtD(C.date || k.date), { size: 10, f: 'M', color: OC.grey }), ...partners(DP ? 1.3 : .543, 6.4, .45),
       ...(DP ? [img(.136, 6.48, 1.016, 1.016, D + 'ge.png'), T(1.1, 7.19, 5.1, .24, 'Présentation dans le cadre exclusif du programme de la transition écologique (DPTE)', { size: 8, f: 'M', color: OC.grey, align: 'center' })] : [])], [5.29, 7.07, .83]);
   }
   /* Offre (intercalaire) */
@@ -2307,12 +2330,13 @@ function buildOcba(s, c) {
     const rows = [['Typologie', PARC ? (c.groups.map(g => g.t).join(', ') || 'Parc immobilier') : (p.affectation || 'Habitat collectif')],
       ['Occupation', PARC ? `${c.nB} bâtiment${c.nB > 1 ? 's' : ''}${c.logs ? `, ${fmtN(c.logs)} logements` : ''}` : `${N} logement${N > 1 ? 's' : ''}${A ? ` & ${A} arcade${A > 1 ? 's' : ''}` : ''}`],
       ['Réalisation', y1 === y2 ? String(y1) : `${y1} – ${y2}`], ['Propriétaire', p.mo || 'À préciser'],
-      ...(nu != null && nu !== '' ? [['Nuisances pour les usagers', NUISANCE[+nu]]] : []),
+      ...(!PARC && p.label ? [['Objectif énergétique', p.label + (p.annee ? `, bâtiment de ${p.annee}` : '')]] : []),
+      ...((nu != null && nu !== '') || CONTEXTE.some(x => p.ctx?.[x.id]) ? [['Pendant les travaux', [...(nu != null && nu !== '' ? [`nuisances ${NUISANCE[+nu].toLowerCase()}`] : []), ...CONTEXTE.filter(x => p.ctx?.[x.id]).map(x => x.t.toLowerCase())].join(', ').replace(/^./, m => m.toUpperCase())]] : []),
       [SOLO ? 'AMU' : 'Binôme AMU', SOLO ? 'ROBYR Stéphane' : 'ROBYR Stéphane & OLIVIER Pierre']];
     const it = [T(.543, .46, 5.4, .44, 'Votre projet', { size: 23, f: 'MB', color: OC.teal }), ...logo(5.94, .38, .52, 1.7, 0, 1)];
     const ns = Math.min(21.5, 5.4 / mbw(name, 1, .97)); it.push(T(.543, .93, 5.6, .4, name, { size: ns, f: 'MS', color: OC.dark }), { ...R(.543, 1.37, 5.4, .016, OC.grey), op: .5 });
     const gap = Math.min(.87, (6.66 - 1.62) / rows.length), ch = Math.min(.76, gap - .1);
-    rows.forEach(([t, v], i) => { const y = 1.62 + i * gap, fs = Math.max(7, Math.min(8.5, 2.36 / mbw(v, 1, .93))); it.push(...card(.543, y, 2.707, ch), T(.743, y + ch * .16, 2.4, .26, t, { size: 10.5, f: 'MS', color: OC.grey }), T(.743, y + ch * .55, 2.42, .24, v, { size: fs, f: 'M', color: OC.grey })); });
+    rows.forEach(([t, v], i) => { const y = 1.62 + i * gap, two = mbw(v, 8, .93) > 2.4, fs = two ? 7.5 : Math.max(7, Math.min(8.5, 2.36 / mbw(v, 1, .93))); it.push(...card(.543, y, 2.707, ch), T(.743, y + ch * .14, 2.4, .26, t, { size: 10.5, f: 'MS', color: OC.grey }), T(.743, y + ch * (two ? .44 : .55), 2.42, ch * .52, v, { size: fs, f: 'M', color: OC.grey, lh: 1.2 })); });
     const tr = TRAVAUX.filter(t => p.travaux.includes(t.id)).map(t => t.t), pr = (PARC ? [c.prog, ...c.groups] : c.pks.filter(x => !x.opt)).concat(c.pks.filter(x => x.opt && x.on)).map(x => x.group ? `${x.t} (${x.n} bât.)` : x.t);
     const X = 3.55, CW = 2.45, IW = CW - .17;
     let fs = 8.5, h1, h2, b1, b2;
@@ -2385,13 +2409,46 @@ function buildOcba(s, c) {
     }
   }
 
-  const all = [proj.o1, ...[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(stat), ...['pDiv', 'pProjet', 'pCadrage', 'pCal', 'pTarifs', 'pComp'].map(id => proj[id]).filter(Boolean), ...[18, 19, 20].map(stat)];
+  /* Ce que fait l'AMU, et ce qu'il ne fait pas */
+  {
+    const it = [T(.543, .52, 8.9, .45, 'Ce que fait l’AMU, et ce qu’il ne fait pas', { size: 21.5, f: 'MS', color: OC.dark }), T(.543, .98, 8.9, .3, 'Une mission de moyens, à égale distance de tous les acteurs du projet', { size: 10.5, f: 'M', color: OC.grey }),
+      R(.543, 1.55, 4.3, 4.95, OC.teal, .08), T(.8, 1.78, 3.8, .3, 'Ce que fait l’AMU', { size: 13, f: 'MS', color: W })];
+    ROLE.forEach((r, i) => { const y = 2.35 + i * 1.0; it.push(E(.8, y, .46, .46, W), I(.92, y + .12, .22, r.ic, OC.teal), T(1.45, y - .02, 3.2, .28, r.t, { size: 12.5, f: 'MS', color: W }), T(1.45, y + .28, 3.2, .26, r.d.replace(/^./, m => m.toUpperCase()), { size: 9.5, f: 'M', color: '#E3EEF2' })); });
+    it.push(T(5.15, 1.62, 4.3, .3, 'Ce qu’il ne fait pas', { size: 13, f: 'MS', color: OC.teal }));
+    LIMITES.forEach((r, i) => { const y = 2.12 + i * 1.02; it.push(...card(5.15, y, 4.3, .86), I(5.42, y + .25, .34, r.ic, OC.teal), T(5.95, y + .14, 3.35, .28, r.t, { size: 12, f: 'MS', color: OC.dark }), T(5.95, y + .45, 3.35, .26, r.d.replace(/^./, m => m.toUpperCase()), { size: 9.5, f: 'M', color: OC.grey })); });
+    it.push(I(5.15, 5.36, .26, 'info', OC.teal), T(5.55, 5.32, 3.9, 1.0, `Condition : chaque acteur (architecte, direction des travaux, ${PARC ? 'service gestionnaire' : 'régie'}) joue pleinement son rôle.`, { size: 9.5, f: 'M', color: OC.grey, lh: 1.3 }));
+    proj.pCadre = slide('pCadre', [...it, ...footC()], [8.35, 7.07, .9]);
+  }
+  /* Pierre Olivier, collaborateur (modèle « Help-Immo Robyr Stéphane ») */
+  if (!SOLO) {
+    const t = TEAM.find(x => x.id === 'po'), it = [T(.543, .52, 5.5, .45, `${t.org}`, { size: 21.5, f: 'MS', color: OC.dark }), T(.543, 1.0, 5.5, .32, t.name, { size: 14, f: 'MS', color: OC.teal })];
+    let y = 1.7; [[t.focus, t.tags.join(', ') + '.'], ['Parcours', t.bio.join('\n'), 1], ['Rôle dans le mandat', 'Relation avec les usagers, médiation, énergie et écogestes, en tandem avec Help-Immo.'], ['Contact', `${t.mail}\n${t.tel}`]].forEach(([h, b, bul]) => {
+      const n = b.split('\n').reduce((a, l) => a + ocWrap(l, 9.5, 5.2).length, 0), hb = n * .19 + .06;
+      it.push(T(.543, y, 5.4, .26, h, { size: 10.5, f: 'MB', color: OC.teal }), T(.543, y + .3, 5.4, hb, b, { size: 9.5, f: 'M', color: OC.grey, lh: 1.35, ...(bul ? { bul: 1 } : {}) })); y += .3 + hb + .28; });
+    if (C.poPhoto) it.push(img(6.25, 0, 3.75, 7.5, C.poPhoto, 'cover'));
+    else it.push(R(6.25, 0, 3.75, 7.5, '#EEF3F5'), E(7.25, 2.75, 1.75, 1.75, OC.teal), T(7.25, 2.75, 1.75, 1.75, t.ini, { size: 40, f: 'MS', color: W, align: 'center', valign: 'middle', lh: 1 }));
+    proj.pPO = slide('pPO', [...it, ...footC()], [5.0, 7.07, .9]);
+  }
+  /* Déroulé du mandat AMU (étapes T0 à T11 par phase) */
+  {
+    const o = s.prest.opts, st = STEPS.filter(x => !x.opt || o[x.opt]), PN = PARC ? PHASES : PHASES_L, cols = [0, 1, 2].map(ph => st.filter(x => x.ph === ph)), mx = Math.max(...cols.map(c2 => c2.length)), w = 2.838, y0 = 1.72, hC = .7 + mx * .62;
+    const it = [...head('Déroulé du mandat AMU', PARC ? 'Le cycle AMU de chaque bâtiment, calé sur ses travaux' : 'Avant, pendant et après les travaux')];
+    cols.forEach((L, ph) => { const x = .543 + ph * (w + .2);
+      it.push({ ...R(x, y0, w, hC, W, .06, OC.line), lw: 1.1 }, R(x + .05, y0, w - .1, .05, OC.teal, .02), T(x + .16, y0 + .2, w - .3, .3, PN[ph], { size: 12, f: 'MS', color: OC.teal }));
+      L.forEach((x2, j) => { const yy = y0 + .68 + j * .62; it.push({ ...R(x + .16, yy, .62, .3, OC.pale, .05, OC.line), lw: .4 }, T(x + .16, yy, .62, .3, x2.code, { size: 9, f: 'MS', color: OC.grey, align: 'center', valign: 'middle' }),
+        T(x + .88, yy - .03, w - 1.0, .28, x2.t + (x2.code === 'T5–T7' ? ` × ${s.prest.comites}` : ''), { size: 10, f: 'MS', color: OC.dark }), T(x + .88, yy + .24, w - 1.0, .22, x2.w, { size: 8.5, f: 'M', color: OC.grey })); }); });
+    if (o.permanence) { const y = y0 + hC + .22; it.push(R(.543, y, 8.914, .44, OC.pale, .22), I(.75, y + .1, .24, 'phone', OC.teal), T(1.1, y, 8.2, .44, `${PARC ? 'Permanence centralisée' : 'Permanence usagers'}, de T3 à T8 : téléphone, courriel et visites`, { size: 10.5, f: 'MS', color: OC.teal, valign: 'middle' })); }
+    proj.pDeroule = slide('pDeroule', [...it, ...footC()], [8.35, 7.07, .9]);
+  }
+
+  const all = [proj.o1, stat(2), stat(3), proj.pCadre, ...[4, 5, 6, 7].map(stat), ...(proj.pPO ? [proj.pPO] : []), ...[8, 9, 10, 11, 12, 13, 14, 15].map(stat), ...['pDiv', 'pProjet', 'pCadrage', 'pDeroule', 'pCal', 'pTarifs', 'pComp'].map(id => proj[id]).filter(Boolean), ...[18, 19, 20].map(stat)];
   const out = all.filter(sl => !s.pres?.hide?.[sl.id]);
   out.forEach((sl, i) => { if (sl.pn) sl.items.push(T(sl.pn[0], sl.pn[1], sl.pn[2], .14, String(i + 1), { size: 6.5, f: 'M', color: OC.grey, align: 'right' })); });
   return out.length ? out : all.slice(0, 1);
 }
 
 /* PowerPoint : le fichier du modèle, dont la fin est remplacée par les diapositives du projet */
+const exts_png = ct => [...ct.getElementsByTagNameNS('http://schemas.openxmlformats.org/package/2006/content-types', 'Default')].some(e => e.getAttribute('Extension').toLowerCase() === 'png');
 async function exportOcbaPPTX() {
   busy(true, 'Création du PowerPoint…');
   try {
@@ -2418,6 +2475,23 @@ async function exportOcbaPPTX() {
       const el = ids[i], f = pathOf(el), rf = relsPath(f);
       if (Z.file(rf)) { const sr = await rd(Z, rf); [...sr.getElementsByTagNameNS(NK, 'Relationship')].filter(e => /notesSlide$/.test(e.getAttribute('Type'))).forEach(e => { const nf = resolve(f, e.getAttribute('Target')); Z.remove(nf); Z.remove(relsPath(nf)); ovr(nf)?.remove(); }); }
       Z.remove(f); Z.remove(rf); ovr(f)?.remove(); relOf(el.getAttributeNS(NR, 'id')).remove(); el.remove();
+    }
+    /* diapositives du modèle conservées : logo CLP retiré, armoiries selon le choix DPTE, logos partenaires ajoutés */
+    const CU = S.pres.custom || {}, DPx = !!CU.dpteOn, LG = CU.logos || [], EMU = v => Math.round(v * 914400);
+    LG.forEach((l, i) => Z.file(`ppt/media/partner-${i + 1}.png`, b64bytes(l.src)));
+    if (LG.length && !exts_png(ct)) { const d = ct.createElementNS(NC, 'Default'); d.setAttribute('Extension', 'png'); d.setAttribute('ContentType', 'image/png'); ct.documentElement.insertBefore(d, ct.documentElement.firstChild); }
+    for (const n of keep) {
+      const f = pathOf(ids[n - 1]), rf = relsPath(f), x = await rd(Z, f), sr = await rd(Z, rf);
+      const rl = [...sr.getElementsByTagNameNS(NK, 'Relationship')], bad = new Set(rl.filter(e => /image25\.png$/.test(e.getAttribute('Target')) || (!DPx && /image4\.png$/.test(e.getAttribute('Target')))).map(e => e.getAttribute('Id')));
+      [...x.getElementsByTagNameNS('http://schemas.openxmlformats.org/presentationml/2006/main', 'pic')].forEach(pic => { const bl = pic.getElementsByTagNameNS('http://schemas.openxmlformats.org/drawingml/2006/main', 'blip')[0]; if (bl && bad.has(bl.getAttributeNS(NR, 'embed'))) pic.remove(); });
+      if (LG.length) {
+        const q = n === 18 || n === 19; let lx = q ? (DPx ? 1.3 : .2) : .741; const ly = q ? 6.6 : 6.89, lh = q ? .42 : .475, tree = x.getElementsByTagNameNS(NP, 'spTree')[0];
+        LG.forEach((l, i) => { const w = Math.min(1.5, lh * (l.r || 1)), hh = w / (l.r || 1), rid = 'rIdLogo' + (i + 1);
+          const r = sr.createElementNS(NK, 'Relationship'); r.setAttribute('Id', rid); r.setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image'); r.setAttribute('Target', `../media/partner-${i + 1}.png`); sr.documentElement.appendChild(r);
+          const frag = new DOMParser().parseFromString(`<p:pic xmlns:p="${NP}" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${NR}"><p:nvPicPr><p:cNvPr id="${9001 + i}" name="Logo partenaire ${i + 1}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${EMU(lx)}" y="${EMU(ly + (lh - hh) / 2)}"/><a:ext cx="${EMU(w)}" cy="${EMU(hh)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`, 'application/xml').documentElement;
+          tree.appendChild(x.importNode(frag, true)); lx += w + .14; });
+      }
+      wr(f, x); Z.file(rf, new XMLSerializer().serializeToString(sr));
     }
     /* ajoute les diapositives du projet */
     let maxN = Math.max(...Object.keys(Z.files).map(f => +(/^ppt\/slides\/slide(\d+)\.xml$/.exec(f)?.[1] || 0))), maxId = Math.max(...ids.map(e => +e.getAttribute('id'))), j = 0;
