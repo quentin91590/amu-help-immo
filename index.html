@@ -524,6 +524,13 @@ h3 .r{margin-left:auto;font:500 14px/1 var(--ui);color:var(--mut)}
 .chip.sm2{min-height:36px;padding:6px 13px;font-size:13.5px}
 .chip[aria-disabled=true]{opacity:.4}
 .cust .f{margin-top:10px}
+.solo{display:block}
+.person{position:relative}
+.rmp{position:absolute;top:12px;right:12px;border:0;background:none;color:var(--mut);padding:6px;border-radius:10px;opacity:.55}
+.rmp:hover,.rmp:focus-visible{opacity:1;background:var(--pt)}
+.addc{display:inline-flex;align-items:center;gap:6px;margin:10px 2px 0;border:0;background:none;padding:6px 4px;color:var(--mut);font-weight:600;font-size:13.5px;border-radius:8px}
+.addc:hover,.addc:focus-visible{color:var(--p)}
+.addc svg.i{width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -969,7 +976,7 @@ function defaults() {
     prest: { tarif: 140, tarifSocial: 75, comites: 3, imprevus: 5, opts: {}, ov: {}, lab: {}, show: { restitution: true, permanence: true, eco: true, final: true, social: true }, rocadesN: null, frais: { on: true, montant: 4000 }, partenaire: 'Interstices' },
     planning: { debut: `${deb.getFullYear()}-${String(deb.getMonth() + 1).padStart(2, '0')}`, duree: 24, ov: {} },
     contrat: { ref: `${String(now.getFullYear()).slice(2)}01`, subOn: true, lieu: 'Genève', date: isoDate(now), mode: 'estimation', factu: 'etape', paiement: 30, validite: '31.12.2027', subvention: 0, signMO: '', fonctionMO: '', annexes: [] },
-    team: { po: true },
+    team: { po: false },
     pres: { hide: {}, useDeck: true, model: 'ocba', custom: { logo: '', logoR: 0, cover: 'modele', coverImg: '', fond: '', title: '', sub: '', line: '', dpte: true } },
     theme: { p: BRAND.p, a: BRAND.a },
   };
@@ -1232,7 +1239,7 @@ async function processPhoto(file, i) {
 function vAmu() {
   const o = S.prest.opts, C = S.prest.comites, us = usagers(S);
   const steps = STEPS.map(st => ({ ...st, off: st.opt && !o[st.opt] }));
-  const person = t => `<div class="card person"><div class="row"><span class="av" style="background:${t.col === 'p' ? S.theme.p : S.theme.a}">${t.ini}</span><div><div class="nm">${t.name}</div><div class="org">${t.org}</div><span class="fc" style="background:${t.col === 'p' ? 'var(--p2)' : 'var(--at)'};color:${t.col === 'p' ? 'var(--p)' : 'var(--a)'}">${t.focus}</span></div></div>
+  const person = t => `<div class="card person">${t.id === 'po' ? `<button class="rmp" data-a="bool" data-p="team.po" aria-label="Retirer ${t.name}" data-tip="Retirer du mandat">${ic('x', 'sm')}</button>` : ''}<div class="row"><span class="av" style="background:${t.col === 'p' ? S.theme.p : S.theme.a}">${t.ini}</span><div><div class="nm">${t.name}</div><div class="org">${t.org}</div><span class="fc" style="background:${t.col === 'p' ? 'var(--p2)' : 'var(--at)'};color:${t.col === 'p' ? 'var(--p)' : 'var(--a)'}">${t.focus}</span></div></div>
     <div class="mini">${t.tags.map(x => `<span>${x}</span>`).join('')}</div><ul>${t.bio.map(x => `<li>${x}</li>`).join('')}</ul>
     <div class="ct"><span>${ic('mail')}${t.mail}</span><span>${ic('phone')}${t.tel}</span></div></div>`;
   const li = (r, col) => `<li><span class="bubble sm" ${col ? `style="color:${col}"` : ''}>${ic(r.ic)}</span><span><b>${r.t}</b><small>${r.d}</small></span></li>`;
@@ -1250,11 +1257,12 @@ function vAmu() {
   <h3 class="anchor" id="s-parcours">${isParc(S) ? 'Le cycle de chaque bâtiment' : 'Déroulé du mandat AMU'}</h3>
   <ol class="path">${steps.map(st => { const c = phaseCol(st.ph), head = st.ph !== ph ? (ph = st.ph, `<li style="--c:${c}"><span class="phase">${(isParc(S) ? PHASES : PHASES_L)[st.ph]}</span></li>`) : '';
     return head + `<li class="step ${U.stepOpen[st.code] ? 'open' : ''} ${st.off ? 'off' : ''}" style="--c:${c};--rail:${mix(c, '#ffffff', .6)}"><span class="nd">${ic(st.ic)}</span><div class="bx"><button class="hd" data-a="stepo" data-id="${st.code}" aria-expanded="${!!U.stepOpen[st.code]}"><span class="cd">${st.code}</span><span class="tt">${st.t}${st.code === 'T5–T7' ? ` × ${C}` : ''}${st.opt ? '<span class="tag">option</span>' : ''}</span><span class="wh">${st.w}</span></button></div><ul class="kw">${st.kw.filter(k => S.contrat.subOn || !/SIG/.test(k)).map(k => `<li>${k}</li>`).join('')}</ul></li>`; }).join('')}</ol>
-  <h3 class="anchor h3row" id="s-tandem"><span>${team(S).length > 1 ? 'Prestataires AMU' : 'Prestataire AMU'}</span><button class="chip sm ${S.team.po ? 'on' : ''}" data-a="bool" data-p="team.po" aria-pressed="${!!S.team.po}">${ic(S.team.po ? 'check' : 'plus')}Pierre Olivier</button></h3>
-  <div class="eq2">${team(S).map(person).join('')}${S.team.po ? '' : `<button class="card addp" data-a="bool" data-p="team.po">${ic('plus')}<span><b>Ajouter Pierre Olivier</b><small>Cité-Lumière Production, en tandem</small></span></button>`}</div>
+  <h3 class="anchor" id="s-tandem">${team(S).length > 1 ? 'Prestataires AMU' : 'Prestataire AMU'}</h3>
+  <div class="${S.team.po ? 'eq2' : 'solo'}">${team(S).map(person).join('')}</div>
+  ${S.team.po ? '' : `<button class="addc" data-a="bool" data-p="team.po">${ic('plus', 'sm')}Ajouter un collaborateur</button>`}
   <h3 class="anchor" id="s-refs">Références récentes</h3>
   <div class="eq3">${REFS.map((r, i) => { const src = refPhoto(i); return `<div class="card ref">
-    <div class="ph">${src ? `<img src="${src}" alt="${esc(r.name)}"><button class="phx" data-a="phDel" data-i="${i}" aria-label="Retirer la photo">${ic('x', 'sm')}</button>` : `<button class="phadd" data-a="phAdd" data-i="${i}">${ic('image-plus')}<span>Ajouter une photo</span></button>`}</div>
+    <div class="ph">${src ? `<img src="${src}" alt="${esc(r.name)}">${PHOTOS[i] ? `<button class="phx" data-a="phDel" data-i="${i}" aria-label="Retirer la photo">${ic('x', 'sm')}</button>` : ''}` : `<button class="phadd" data-a="phAdd" data-i="${i}">${ic('image-plus')}<span>Ajouter une photo</span></button>`}</div>
     <div class="big">${r.n}<small>logements</small></div><div class="nm">${r.name}</div><div class="meta">${r.city}, ${r.when}</div><div class="w">${r.works}</div>
     <div class="mini">${r.amu.map(x => `<span>${x}</span>`).join('')}</div>
     <div class="foot2">${r.video ? `<a href="${r.video}" target="_blank" rel="noopener">${ic('video', 'sm')}Voir le reportage</a>` : ''}<div class="meta">${r.mo}</div></div></div>`; }).join('')}</div>
